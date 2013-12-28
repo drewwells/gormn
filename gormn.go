@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
+	"os"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -50,7 +52,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 }
 
+var PID string
+
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		//log.Fatal("Error loading .env file")
+	}
+	PID = os.Getenv("PID")
 
 	http.HandleFunc("/",func(w http.ResponseWriter, r *http.Request){
 		http.Redirect(w, r, "/view/FrontPage", http.StatusFound)
@@ -58,7 +67,49 @@ func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
-	http.ListenAndServe(":8080", nil)
+
+	http.HandleFunc("/rmn/", func(w http.ResponseWriter, r *http.Request){
+		
+		w.Header().Set("pid",PID)
+		w.Header().Set("fp","gormn")
+		resp, err := http.Get("https://api.retailmenot.com/v1/services")
+
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			
+		}
+		fmt.Println(string(body))
+	})
+
+	body := ajax("https://api.retailmenot.com/" +
+		"v1/mobile/offers/mobile/featured")
+
+	fmt.Println(string(body))
+	
+}
+
+func ajax(url string) ([]byte) {
+
+	client := &http.Client{
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	req.Header.Set("pid",PID)
+	req.Header.Set("fp","gormn")
+
+	resp, errr := client.Do(req)
+	if errr != nil {
+		fmt.Println(errr)
+	}
+	defer resp.Body.Close()
+	bs, _ := ioutil.ReadAll(resp.Body)
+	return bs
 }
 
 func (p *Page) save() error {
