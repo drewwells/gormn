@@ -1,42 +1,48 @@
 package main
 
 import (
+	"github.com/drewwells/utils"
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"
+	"encoding/json"
+	//"time"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"errors"
-	"reflect"
+	"log"
 )
 
 type Page struct {
-	Title string
-	Body []byte
-	SBody template.HTML
+	Title   string
+	Body    []byte
+	SBody   template.HTML
+	Coupons []*Coupon
 }
 
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+type HttpResponse struct {
+	url      string
+	body     []byte
+	response *http.Response
+	err      error
+}
+
+type Coupon struct {
+	OfferId     int32
+	Title       string
+	Description string
+	ExpiresDate int64 //Golang only reads RFC3339 formated time
+	CouponCode  string
+	SuccessRate int8
+	OutClickUrl string
+	NewCoupon   bool
+}
+
+var validPath = regexp.MustCompile("^/(view)/(.+)$")
 var templates = template.Must(template.ParseGlob("tmpl/*.tmpl"))
-
-func enumerate(x interface{}) {
-	val := reflect.ValueOf(x).Elem()
-
-	i := 0
-	for {
-		if(i >= val.NumField()){
-			break
-		}
-		//valueField := val.Field(i)
-		typeField := val.Type().Field(i)
-
-		fmt.Printf("Field Name: %s,\t Field Value: ,\t \n",
-			typeField.Name)
-		i++
-	}
-}
+var PID string
 
 func loadPage(title string) (*Page, error) {
 	filename := "data/" + title + ".txt"
@@ -52,7 +58,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 }
 
-var PID string
 
 func main() {
 	err := godotenv.Load()
@@ -60,56 +65,11 @@ func main() {
 		//log.Fatal("Error loading .env file")
 	}
 	PID = os.Getenv("PID")
-
-	http.HandleFunc("/",func(w http.ResponseWriter, r *http.Request){
-		http.Redirect(w, r, "/view/FrontPage", http.StatusFound)
-	})
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 
-	http.HandleFunc("/rmn/", func(w http.ResponseWriter, r *http.Request){
-		
-		w.Header().Set("pid",PID)
-		w.Header().Set("fp","gormn")
-		resp, err := http.Get("https://api.retailmenot.com/v1/services")
-
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			
-		}
-		fmt.Println(string(body))
-	})
-
-	body := ajax("https://api.retailmenot.com/" +
-		"v1/mobile/offers/mobile/featured")
-
-	fmt.Println(string(body))
-	
-}
-
-func ajax(url string) ([]byte) {
-
-	client := &http.Client{
-	}
-
-	req, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	req.Header.Set("pid",PID)
-	req.Header.Set("fp","gormn")
-
-	resp, errr := client.Do(req)
-	if errr != nil {
-		fmt.Println(errr)
-	}
-	defer resp.Body.Close()
-	bs, _ := ioutil.ReadAll(resp.Body)
-	return bs
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func (p *Page) save() error {
@@ -140,12 +100,21 @@ func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
+	uri := "https://api.retailmenot.com/v1/mobile/stores/" + 
+		title + "/offers"
+	channel := utils.Get(uri, PID)
+	req := <-channel
+	
+	coupons := []*Coupon{}
+
+	err := json.Unmarshal(req.ByteStr, &coupons)
 	if err != nil {
-		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
-		return
+		fmt.Println(err)
 	}
+	p := &Page{Title: title, Coupons: coupons}
+
 	renderTemplate(w, "view", p)
+
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request, title string) {
@@ -172,6 +141,7 @@ func makeHandler(fn func (http.ResponseWriter, *http.Request, string)) http.Hand
 		//Here we will extract the page title from the Request,
 		// and call the provided handler 'fn'
 		m := validPath.FindStringSubmatch(r.URL.Path)
+
 		if m == nil {
 			http.NotFound(w, r)
 			return
