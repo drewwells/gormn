@@ -6,6 +6,7 @@ import (
 )
 
 type Page struct {
+	Title   string
 	Body    []byte
 	SBody   template.HTML
 	Coupons []*Coupon
