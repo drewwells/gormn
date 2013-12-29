@@ -9,7 +9,11 @@ import (
 	//"regexp"
 )
 
-var templates = template.Must(template.ParseGlob("tmpl/*.tmpl"))
+var funcMap = template.FuncMap{
+	"titleExpand": TitleExpand,
+}
+
+var templates = template.Must(template.New("").Funcs(funcMap).ParseGlob("tmpl/*.tmpl"))
 
 func TitleExpand(args ...interface{}) string {
 	ok := false
@@ -35,7 +39,8 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	uri := "https://api.retailmenot.com/v1/mobile/stores/" + 
 		title + "/offers"
 
-	storeURI :=  "https://api.retailmenot.com/v1/mobile/stores/" + title
+	storeURI :=  "https://api.retailmenot.com/v1/mobile/stores/" + 
+		title
 	coupons := []*Coupon{}
 	channel := utils.Get(uri, PID)
 
@@ -53,7 +58,6 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	utils.CheckError(errS)
 
 	renderTemplate(w, "master", &Page{
-		Title: title,
 		Coupons: coupons,
 		Store: store,
 	})
@@ -62,9 +66,6 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 
 	
-	funcMap := template.FuncMap{"titleExpand": TitleExpand}
-	templates = templates.Funcs(funcMap)
-
 	w.Header().Set("Content-Type", "text/html")
 
 	err := templates.ExecuteTemplate(w, tmpl+".tmpl", p)
