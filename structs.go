@@ -10,6 +10,7 @@ type Page struct {
 	Body    []byte
 	SBody   template.HTML
 	Coupons []*Coupon
+	Store   *Store
 }
 
 type HttpResponse struct {
@@ -28,4 +29,12 @@ type Coupon struct {
 	SuccessRate int8
 	OutClickUrl string
 	NewCoupon   bool
+}
+
+type Store struct {
+	StoreId     int32
+	Title       string
+	Domain      string
+	Description string
+	MobileInStoreEnabled bool
 }

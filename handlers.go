@@ -34,15 +34,24 @@ func TitleExpand(args ...interface{}) string {
 func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	uri := "https://api.retailmenot.com/v1/mobile/stores/" + 
 		title + "/offers"
+
+	storeURI :=  "https://api.retailmenot.com/v1/mobile/stores/" + title
+
 	channel := utils.Get(uri, PID)
 	req := <-channel
+	storeChannel := utils.Get(storeURI, PID)
+	storeReq := <-storeChannel
 	
 	coupons := []*Coupon{}
+	store   := &Store{}
 
 	err := json.Unmarshal(req.ByteStr, &coupons)
 	utils.CheckError(err)
 
-	p := &Page{Title: title, Coupons: coupons}
+	errS := json.Unmarshal(storeReq.ByteStr, &store)
+	utils.CheckError(errS)
+
+	p := &Page{Title: title, Coupons: coupons, Store: store}
 
 	renderTemplate(w, "master", p)
 }
