@@ -36,14 +36,15 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
 		title + "/offers"
 
 	storeURI :=  "https://api.retailmenot.com/v1/mobile/stores/" + title
-
-	channel := utils.Get(uri, PID)
-	req := <-channel
-	storeChannel := utils.Get(storeURI, PID)
-	storeReq := <-storeChannel
-	
 	coupons := []*Coupon{}
-	store   := &Store{}
+	channel := utils.Get(uri, PID)
+
+	store        := &Store{}
+	storeChannel := utils.Get(storeURI, PID)
+
+	//Retrieve and Unmarshal JSON
+	req      := <-channel
+	storeReq := <-storeChannel
 
 	err := json.Unmarshal(req.ByteStr, &coupons)
 	utils.CheckError(err)
@@ -51,9 +52,11 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	errS := json.Unmarshal(storeReq.ByteStr, &store)
 	utils.CheckError(errS)
 
-	p := &Page{Title: title, Coupons: coupons, Store: store}
-
-	renderTemplate(w, "master", p)
+	renderTemplate(w, "master", &Page{
+		Title: title,
+		Coupons: coupons,
+		Store: store,
+	})
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
