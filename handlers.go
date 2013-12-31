@@ -9,6 +9,40 @@ import (
 	//"regexp"
 )
 
+type Page struct {
+	Title   string
+	Body    []byte
+	SBody   template.HTML
+	Coupons *[]Coupon
+	Store   *Store
+}
+
+type HttpResponse struct {
+	url      string
+	body     []byte
+	response *http.Response
+	err      error
+}
+
+type Coupon struct {
+	OfferId     int32
+	Title       string
+	Description string
+	ExpiresDate int64 //Golang only reads RFC3339 formated time
+	CouponCode  string
+	SuccessRate int8
+	OutClickUrl string
+	NewCoupon   bool
+}
+
+type Store struct {
+	StoreId     int32
+	Title       string
+	Domain      string
+	Description string
+	MobileInStoreEnabled bool
+}
+
 var funcMap = template.FuncMap{
 	"titleExpand": TitleExpand,
 }
@@ -25,27 +59,31 @@ func TitleExpand(args ...interface{}) string {
 		s = fmt.Sprint(args...)
 	}
 
-	// find the @ symbol
-	/*substrs := strings.Split(s, "@")
-	if len(substrs) != 2 {
-		return s
-	}
-	// replace the @ by " at "
-	return (substrs[0] + " at " + substrs[1])*/
 	return "Title: " + s
 }
 
-func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
+func ViewHandler(w http.ResponseWriter, r *http.Request, domain string) {
+	coupons, store := ViewData(domain)
+	renderTemplate(w, "master", &Page{
+		Coupons: coupons,
+		Store: store,
+	})
+}
+
+func ViewData(domain string) (*[]Coupon, *Store){
 	uri := "https://api.retailmenot.com/v1/mobile/stores/" + 
-		title + "/offers"
+		domain + "/offers"
 
 	storeURI :=  "https://api.retailmenot.com/v1/mobile/stores/" + 
-		title
-	coupons := []*Coupon{}
-	channel := utils.Get(uri, PID)
+		domain
 
-	store        := &Store{}
+	coupons := &[]Coupon{}
+	channel := utils.Get(uri, PID)
+	//defer close(channel)
+
+	store := &Store{}
 	storeChannel := utils.Get(storeURI, PID)
+	//defer close(channel)
 
 	//Retrieve and Unmarshal JSON
 	req      := <-channel
@@ -57,10 +95,7 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	errS := json.Unmarshal(storeReq.ByteStr, &store)
 	utils.CheckError(errS)
 
-	renderTemplate(w, "master", &Page{
-		Coupons: coupons,
-		Store: store,
-	})
+	return coupons, store
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
