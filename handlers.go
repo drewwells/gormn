@@ -1,11 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
-	"github.com/drewwells/utils"
 	"net/http"
-	"encoding/json"
+
+	"github.com/drewwells/utils"
 	//"regexp"
 )
 
@@ -36,10 +37,10 @@ type Coupon struct {
 }
 
 type Store struct {
-	StoreId     int32
-	Title       string
-	Domain      string
-	Description string
+	StoreId              int32
+	Title                string
+	Domain               string
+	Description          string
 	MobileInStoreEnabled bool
 }
 
@@ -66,27 +67,32 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, domain string) {
 	coupons, store := ViewData(domain)
 	renderTemplate(w, "master", &Page{
 		Coupons: coupons,
-		Store: store,
+		Store:   store,
 	})
 }
 
-func ViewData(domain string) (*[]Coupon, *Store){
-	uri := "https://api.retailmenot.com/v1/mobile/stores/" + 
+func ViewData(domain string) (*[]Coupon, *Store) {
+	uri := "https://api.retailmenot.com/v1/mobile/stores/" +
 		domain + "/offers"
 
-	storeURI :=  "https://api.retailmenot.com/v1/mobile/stores/" + 
+	headers := map[string]string{
+		"pid": PID,
+		"fp":  "gormn",
+	}
+
+	storeURI := "https://api.retailmenot.com/v1/mobile/stores/" +
 		domain
 
 	coupons := &[]Coupon{}
-	channel := utils.Get(uri, PID)
+	channel := utils.Get(uri, headers)
 	//defer close(channel)
 
 	store := &Store{}
-	storeChannel := utils.Get(storeURI, PID)
+	storeChannel := utils.Get(storeURI, headers)
 	//defer close(channel)
 
 	//Retrieve and Unmarshal JSON
-	req      := <-channel
+	req := <-channel
 	storeReq := <-storeChannel
 
 	err := json.Unmarshal(req.ByteStr, &coupons)
@@ -100,7 +106,6 @@ func ViewData(domain string) (*[]Coupon, *Store){
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 
-	
 	w.Header().Set("Content-Type", "text/html")
 
 	err := templates.ExecuteTemplate(w, tmpl+".tmpl", p)
@@ -108,5 +113,3 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
-
-
