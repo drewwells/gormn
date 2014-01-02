@@ -92,8 +92,8 @@ func ViewData(domain string) (*[]Coupon, *Store){
 	err := json.Unmarshal(req.ByteStr, &coupons)
 	utils.CheckError(err)
 
-	errS := json.Unmarshal(storeReq.ByteStr, &store)
-	utils.CheckError(errS)
+	err = json.Unmarshal(storeReq.ByteStr, &store)
+	utils.CheckError(err)
 
 	return coupons, store
 }
