@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	//"encoding/json"
@@ -19,17 +20,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	//err := godotenv.Load()
-	//if err != nil {
-	//log.Fatal("Error loading .env file")
-	//}
 	fmt.Println("listening...")
 	PID = os.Getenv("PID")
 	http.HandleFunc("/", root)
 	http.HandleFunc("/view/", makeHandler(ViewHandler))
 
-	//log.Fatal(http.ListenAndServe(":8080", nil))
-	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
