@@ -41,10 +41,6 @@ func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 	return m[2], nil // The title is the second subexpression.
 }
 
-func root(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Try some stores")
-}
-
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//Here we will extract the page title from the Request,

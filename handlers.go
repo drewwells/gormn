@@ -73,6 +73,10 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, domain string) {
 	})
 }
 
+func root(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "home", &Page{})
+}
+
 func ViewData(domain string) (*[]Coupon, *Store) {
 	log.Print(domain)
 	uri := "https://api.retailmenot.com/v1/mobile/stores/" +
