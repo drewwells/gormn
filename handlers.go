@@ -101,7 +101,7 @@ func ViewData(domain string) (*[]Coupon, *Store) {
 	//Retrieve and Unmarshal JSON
 	req := <-channel
 	storeReq := <-storeChannel
-
+	log.Printf(string(req.ByteStr))
 	err := json.Unmarshal(req.ByteStr, &coupons)
 	utils.CheckError(err)
 
