@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/drewwells/utils"
@@ -64,6 +65,7 @@ func TitleExpand(args ...interface{}) string {
 }
 
 func ViewHandler(w http.ResponseWriter, r *http.Request, domain string) {
+	log.Print("handler")
 	coupons, store := ViewData(domain)
 	renderTemplate(w, "master", &Page{
 		Coupons: coupons,
@@ -72,6 +74,7 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, domain string) {
 }
 
 func ViewData(domain string) (*[]Coupon, *Store) {
+	log.Print(domain)
 	uri := "https://api.retailmenot.com/v1/mobile/stores/" +
 		domain + "/offers"
 

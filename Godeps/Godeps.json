@@ -5,10 +5,6 @@
 		{
 			"ImportPath": "github.com/drewwells/utils",
 			"Rev": "a8631753cd580baafe5d10776e42c97b2ee9b93a"
-		},
-		{
-			"ImportPath": "github.com/joho/godotenv",
-			"Rev": "3505098f907089729105e928aebea45f0a643f20"
 		}
 	]
 }

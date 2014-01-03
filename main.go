@@ -3,11 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"github.com/joho/godotenv"
+
 	//"encoding/json"
 	//"html/template"
 	"errors"
-	"log"
 	"net/http"
 	"regexp"
 )
@@ -20,14 +19,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		//log.Fatal("Error loading .env file")
-	}
+	//err := godotenv.Load()
+	//if err != nil {
+	//log.Fatal("Error loading .env file")
+	//}
+	fmt.Println("listening...")
 	PID = os.Getenv("PID")
+	http.HandleFunc("/", root)
 	http.HandleFunc("/view/", makeHandler(ViewHandler))
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	//log.Fatal(http.ListenAndServe(":8080", nil))
+	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 }
 
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -37,6 +39,10 @@ func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", errors.New("Invalid Page Title")
 	}
 	return m[2], nil // The title is the second subexpression.
+}
+
+func root(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Try some stores")
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
