@@ -22,7 +22,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	fmt.Println("listening...")
 	PID = os.Getenv("PID")
-	log.Print(PID)
+	fmt.Println(PID)
 	http.HandleFunc("/", root)
 	http.HandleFunc("/view/", makeHandler(ViewHandler))
 

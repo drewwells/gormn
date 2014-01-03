@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/drewwells/utils"
+
 	//"regexp"
 )
 
@@ -65,8 +66,11 @@ func TitleExpand(args ...interface{}) string {
 }
 
 func ViewHandler(w http.ResponseWriter, r *http.Request, domain string) {
-	log.Print("handler")
-	coupons, store := ViewData(domain)
+	coupons, store, err := ViewData(w, domain)
+	if err != nil {
+		http.Error(w, "Error processing your request", http.StatusInternalServerError)
+		return
+	}
 	renderTemplate(w, "master", &Page{
 		Coupons: coupons,
 		Store:   store,
@@ -77,7 +81,13 @@ func root(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "home", &Page{})
 }
 
-func ViewData(domain string) (*[]Coupon, *Store) {
+func jsonError(w http.ResponseWriter, err error, resp []byte) {
+	if err != nil {
+		log.Print(string(resp))
+	}
+}
+
+func ViewData(w http.ResponseWriter, domain string) (*[]Coupon, *Store, error) {
 	log.Print(domain)
 	uri := "https://api.retailmenot.com/v1/mobile/stores/" +
 		domain + "/offers"
@@ -101,14 +111,14 @@ func ViewData(domain string) (*[]Coupon, *Store) {
 	//Retrieve and Unmarshal JSON
 	req := <-channel
 	storeReq := <-storeChannel
-	log.Printf(string(req.ByteStr))
+
 	err := json.Unmarshal(req.ByteStr, &coupons)
-	utils.CheckError(err)
+	jsonError(w, err, req.ByteStr)
 
 	err = json.Unmarshal(storeReq.ByteStr, &store)
-	utils.CheckError(err)
+	jsonError(w, err, req.ByteStr)
 
-	return coupons, store
+	return coupons, store, err
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
