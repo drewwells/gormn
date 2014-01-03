@@ -44,6 +44,7 @@ func Get(url string, headers map[string]string) chan *HttpResponse {
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
+		log.Print(k + ":" + v)
 	}
 
 	go func() {

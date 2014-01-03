@@ -4,7 +4,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/drewwells/utils",
-			"Rev": "a8631753cd580baafe5d10776e42c97b2ee9b93a"
+			"Rev": "2725188d640ec15293147eee7f682cee3d4cdbb0"
 		}
 	]
 }
